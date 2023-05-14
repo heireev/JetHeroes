@@ -1,16 +1,20 @@
 package com.reev.jetheroes
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
@@ -25,10 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.reev.jetheroes.model.HeroesData
 import com.reev.jetheroes.ui.theme.JetHeroesTheme
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.reev.jetheroes.data.HeroRepository
@@ -40,6 +44,7 @@ fun JetHeroesApp(
     viewModel: JetHeroesViewModel = viewModel(factory = ViewModelFactory(HeroRepository()))
 ) {
     val groupedHeroes by viewModel.groupedHeroes.collectAsState()
+    val query by viewModel.query
 
     Box(modifier = modifier) {
         val scope = rememberCoroutineScope()
@@ -48,9 +53,15 @@ fun JetHeroesApp(
             derivedStateOf { listState.firstVisibleItemIndex > 0 }
         }
         LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(bottom = 80.dp)
+            state = listState, contentPadding = PaddingValues(bottom = 80.dp)
         ) {
+            item {
+                SearchBar(
+                    query = query,
+                    onQueryChange = viewModel::search,
+                    modifier = Modifier.background(MaterialTheme.colors.primary)
+                )
+            }
             groupedHeroes.forEach { (initial, heroes) ->
                 stickyHeader {
                     CharacterHeader(initial)
@@ -59,7 +70,9 @@ fun JetHeroesApp(
                     HeroListItem(
                         name = hero.name,
                         photoUrl = hero.photoUrl,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItemPlacement(tween(durationMillis = 100))
                     )
                 }
             }
@@ -112,8 +125,7 @@ fun HeroListItem(
 
 @Composable
 fun ScrollToTopButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
@@ -122,8 +134,7 @@ fun ScrollToTopButton(
             .clip(shape = CircleShape)
             .size(56.dp),
         colors = ButtonDefaults.buttonColors(
-            backgroundColor = Color.White,
-            contentColor = MaterialTheme.colors.primary
+            backgroundColor = Color.White, contentColor = MaterialTheme.colors.primary
         )
     ) {
         Icon(imageVector = Icons.Filled.KeyboardArrowUp, contentDescription = null)
@@ -132,12 +143,10 @@ fun ScrollToTopButton(
 
 @Composable
 fun CharacterHeader(
-    char: Char,
-    modifier: Modifier = Modifier
+    char: Char, modifier: Modifier = Modifier
 ) {
     Surface(
-        color = MaterialTheme.colors.primary,
-        modifier = modifier
+        color = MaterialTheme.colors.primary, modifier = modifier
     ) {
         Text(
             text = char.toString(),
@@ -149,6 +158,36 @@ fun CharacterHeader(
                 .padding(8.dp)
         )
     }
+}
+
+@Composable
+fun SearchBar(
+    query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier
+) {
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null
+            )
+        },
+        colors = TextFieldDefaults.textFieldColors(
+            backgroundColor = MaterialTheme.colors.surface,
+            disabledIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+        ),
+        placeholder = {
+            Text(stringResource(R.string.search_hero))
+        },
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(16.dp))
+    )
 }
 
 @Preview(showBackground = true)
