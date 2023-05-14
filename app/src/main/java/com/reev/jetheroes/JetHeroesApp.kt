@@ -30,15 +30,16 @@ import com.reev.jetheroes.ui.theme.JetHeroesTheme
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.reev.jetheroes.data.HeroRepository
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun JetHeroesApp(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: JetHeroesViewModel = viewModel(factory = ViewModelFactory(HeroRepository()))
 ) {
-    val groupedHeroes = HeroesData.heroes
-        .sortedBy { it.name }
-        .groupBy { it.name[0] }
+    val groupedHeroes by viewModel.groupedHeroes.collectAsState()
 
     Box(modifier = modifier) {
         val scope = rememberCoroutineScope()
